@@ -46,8 +46,9 @@ Given /^I am on the RottenPotatoes home page$/ do
 # Add a declarative step here for populating the DB with movies.
 
 Given /the following movies have been added to RottenPotatoes:/ do |movies_table|
-  pending  # Remove this statement when you finish implementing the test step
+  #pending  Remove this statement when you finish implementing the test step
   movies_table.hashes.each do |movie|
+    Movie.create!(movie)
     # Each returned movie will be a hash representing one row of the movies_table
     # The keys will be the table headers and the values will be the row contents.
     # Entries can be directly to the database with ActiveRecord methods
@@ -59,16 +60,39 @@ When /^I have opted to see movies rated: "(.*?)"$/ do |arg1|
   # HINT: use String#split to split up the rating_list, then
   # iterate over the ratings and check/uncheck the ratings
   # using the appropriate Capybara command(s)
-  pending  #remove this statement after implementing the test step
+  # pending  remove this statement after implementing the test step
+  all('input[type=checkbox]').each do |checkbox|
+    if checkbox.checked? then 
+        checkbox.click
+    end
+  end
+  arg1.split(/,\s*/).each {|a| check('ratings_'+a)}
+  click_button('ratings_submit')
 end
 
 Then /^I should see only movies rated: "(.*?)"$/ do |arg1|
-  pending  #remove this statement after implementing the test step
+  #pending  #remove this statement after implementing the test step
+
+  Movie.where.not(rating: arg1.split(/,\s*/)).each{|c| expect(page).to have_no_content(c.title)}
+  Movie.where(rating: arg1.split(/,\s*/)).each {|b| expect(page).to have_content(b.title)}
+  page.all("table tr").count.should == Movie.where(rating: arg1.split(/,\s*/)).size + 1
 end
 
 Then /^I should see all of the movies$/ do
-  pending  #remove this statement after implementing the test step
+  #pending  #remove this statement after implementing the test step
+  page.all("table tr").count.should == Movie.all.size + 1
 end
 
 
+When /^I have sorted the movies alphabetically$/ do 
+    click_link('Movie Title')
+end
 
+Then /^I should see "(.*?)" before "(.*?)"$/ do |movie1, movie2|
+    match = /#{movie1}.*#{movie2}/m =~ page.body
+    expect(match).not_to eq(nil)
+end
+
+When /^I have sorted the movies in increasing order of release date$/ do
+    click_link('Release Date')
+end
